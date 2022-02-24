@@ -141,6 +141,10 @@ public abstract class AbstractProcessRuntime<T extends FlowModel> implements Pro
         compiledClassCache.computeIfPresent(code, (k, v) -> compileJavaCode(generateJavaCode()));
     }
 
+    public void recompileXml(String code, String xml) {
+        compiledClassCache.computeIfPresent(code, (k, v) -> compileJavaCode(generateJavaCode()));
+    }
+
     public Node getNodeById(String id) {
         return flowModel.getNode(id);
     }

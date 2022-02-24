@@ -54,8 +54,19 @@ public abstract class AbstractProcessEngine<T extends FlowModel<? extends Transi
     }
 
     @Override
+    public void preCompile(String code, boolean force) {
+        throw new RuntimeException("未实现");
+    }
+
+    @Override
     public void preCompileXml(String code, String xml) {
-        AbstractProcessRuntime runtime = getProcessRuntime(code, xml);
+        AbstractProcessRuntime runtime = getProcessRuntime(code, xml, false);
+        runtime.compile(null);
+    }
+
+    @Override
+    public void preCompileXml(String code, String xml, boolean force) {
+        AbstractProcessRuntime runtime = getProcessRuntime(code, xml, force);
         runtime.compile(null);
     }
 
@@ -92,10 +103,21 @@ public abstract class AbstractProcessEngine<T extends FlowModel<? extends Transi
         return runtime;
     }
 
-    protected <R extends AbstractProcessRuntime> R getProcessRuntime(String code, String xml) {
+    protected <R extends AbstractProcessRuntime> R getProcessRuntime(String code, String xml, boolean force) {
         String cacheKey = getCacheKey(code);
-        AbstractProcessRuntime runtime = runtimeCache.computeIfAbsent(cacheKey, c ->
-            getCompiledRuntimeXml(xml));
+        AbstractProcessRuntime runtime = runtimeCache.get(cacheKey);
+        if (runtime != null) {
+            if (force) {
+                FlowClassLoader.getInstance().clearCache();
+                runtime = getCompiledRuntimeXml(xml);
+                runtimeCache.put(cacheKey, runtime);
+            }
+        } else {
+            runtime = runtimeCache.computeIfAbsent(cacheKey, c ->
+                getCompiledRuntimeXml(xml));
+            return (R) runtime;
+        }
+
         return (R) runtime;
     }
 

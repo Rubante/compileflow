@@ -17,12 +17,17 @@ public class ExpressionUtil {
 
     public static boolean evalCondition(Map root, String condition) {
         try {
-            String regex = "^[a-zA-Z\\$_][a-zA-Z\\$_\\d]+";
+            String regex = "[a-zA-Z\\$_][a-zA-Z\\$_\\d]+";
+
+            // 去掉外层
+            condition = trimNameKey(condition.trim());
 
             Pattern pattern = Pattern.compile(regex);
             Matcher matcher = pattern.matcher(condition);
             while (matcher.find()) {
-                condition = condition.replace(matcher.group(), "_pContext.get(\"" + matcher.group() + "\")");
+                if (!isKeyword(matcher.group())) {
+                    condition = condition.replace(matcher.group(), "_pContext.get(\"" + matcher.group() + "\")");
+                }
             }
 
             ScriptEngineManager manager = new ScriptEngineManager();
@@ -43,7 +48,23 @@ public class ExpressionUtil {
      * @return
      */
     public static String trimNameKey(String key) {
-        String regex = "${}";
         return key.replace("${", "").replace("}", "");
+    }
+
+    /**
+     * 是否为关键字
+     *
+     * @param key
+     * @return
+     */
+    public static boolean isKeyword(String key) {
+        if (Boolean.TRUE.toString().equalsIgnoreCase(key.trim())) {
+            return true;
+        }
+        if (Boolean.FALSE.toString().equalsIgnoreCase(key.trim())) {
+            return true;
+        }
+
+        return false;
     }
 }

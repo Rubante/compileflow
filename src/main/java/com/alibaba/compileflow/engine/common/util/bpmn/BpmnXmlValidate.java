@@ -14,7 +14,7 @@ public class BpmnXmlValidate {
      * @param xml
      * @return
      */
-    public boolean validate(String xml) {
+    public static boolean validate(String xml) {
         if (xml.matches("bpmn2:task")) {
             return false;
         }

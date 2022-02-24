@@ -29,6 +29,7 @@ import com.alibaba.compileflow.engine.process.preruntime.compiler.impl.FlowClass
 import com.alibaba.compileflow.engine.process.preruntime.converter.FlowModelConverter;
 import com.alibaba.compileflow.engine.process.preruntime.converter.impl.parser.model.FlowStreamSource;
 import com.alibaba.compileflow.engine.process.preruntime.converter.impl.parser.model.ResourceFlowStreamSource;
+import com.alibaba.compileflow.engine.process.preruntime.converter.impl.parser.model.StringFlowStreamSource;
 import com.alibaba.compileflow.engine.runtime.impl.AbstractProcessRuntime;
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -50,6 +51,12 @@ public abstract class AbstractProcessEngine<T extends FlowModel<? extends Transi
     @Override
     public void preCompile(String... codes) {
         preCompile(null, codes);
+    }
+
+    @Override
+    public void preCompileXml(String code, String xml) {
+        AbstractProcessRuntime runtime = getProcessRuntime(code, xml);
+        runtime.compile(null);
     }
 
     @Override
@@ -85,8 +92,28 @@ public abstract class AbstractProcessEngine<T extends FlowModel<? extends Transi
         return runtime;
     }
 
+    protected <R extends AbstractProcessRuntime> R getProcessRuntime(String code, String xml) {
+        String cacheKey = getCacheKey(code);
+        AbstractProcessRuntime runtime = runtimeCache.computeIfAbsent(cacheKey, c ->
+            getCompiledRuntimeXml(xml));
+        return (R) runtime;
+    }
+
+    private AbstractProcessRuntime getCompiledRuntimeXml(String xml) {
+        AbstractProcessRuntime runtime = getRuntimeFromXml(xml);
+        runtime.compile();
+        return runtime;
+    }
+
     private AbstractProcessRuntime getRuntimeFromSource(String code) {
         T flowModel = load(code);
+        AbstractProcessRuntime runtime = getRuntimeFromModel(flowModel);
+        runtime.init();
+        return runtime;
+    }
+
+    private AbstractProcessRuntime getRuntimeFromXml(String xml) {
+        T flowModel = loadXml(xml);
         AbstractProcessRuntime runtime = getRuntimeFromModel(flowModel);
         runtime.init();
         return runtime;
@@ -100,6 +127,22 @@ public abstract class AbstractProcessEngine<T extends FlowModel<? extends Transi
         T flowModel = (T) getFlowModelConverter().convertToModel(flowStreamSource);
         if (flowModel == null) {
             throw new RuntimeException("No valid flow model found, code is " + code);
+        }
+
+        checkCycle(flowModel);
+        checkContinuous(flowModel);
+        sortTransition(flowModel);
+
+        return flowModel;
+    }
+
+    @Override
+    public T loadXml(String xml) {
+        FlowStreamSource flowStreamSource = loadFlowString(xml);
+
+        T flowModel = (T) getFlowModelConverter().convertToModel(flowStreamSource);
+        if (flowModel == null) {
+            throw new RuntimeException("No valid flow model found, xml is " + xml);
         }
 
         checkCycle(flowModel);
@@ -124,6 +167,10 @@ public abstract class AbstractProcessEngine<T extends FlowModel<? extends Transi
     private FlowStreamSource loadFlowSource(String code) {
         String filePath = convertToFilePath(code);
         return ResourceFlowStreamSource.of(filePath);
+    }
+
+    private FlowStreamSource loadFlowString(String xml) {
+        return StringFlowStreamSource.of(xml);
     }
 
     private String convertToFilePath(String code) {

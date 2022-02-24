@@ -59,6 +59,10 @@ public class BpmnElementParserProvider extends AbstractFlowElementParserProvider
         registerParser(new ConditionExpressionParser());
         registerParser(new StandardLoopCharacteristicsParser());
         registerParser(new MultiInstanceLoopCharacteristicsParser());
+
+        registerParser(new IncomingParser());
+        registerParser(new OutgoingParser());
+        registerParser(new BpmnDiagramParser());
     }
 
 }

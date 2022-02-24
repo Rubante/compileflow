@@ -61,7 +61,7 @@ public abstract class AbstractActionGenerator extends AbstractRuntimeGenerator
             return String.join(", ", params);
         }
 
-        return "";
+        return "_pContext";
     }
 
     @Override

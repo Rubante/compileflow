@@ -16,18 +16,28 @@
  */
 package com.alibaba.compileflow.engine.process.preruntime.generator.impl.bpmn;
 
+import com.alibaba.compileflow.engine.common.util.DataType;
 import com.alibaba.compileflow.engine.common.util.VarUtils;
 import com.alibaba.compileflow.engine.definition.bpmn.ExclusiveGateway;
 import com.alibaba.compileflow.engine.definition.bpmn.FlowElement;
 import com.alibaba.compileflow.engine.definition.bpmn.SequenceFlow;
 import com.alibaba.compileflow.engine.definition.common.TransitionNode;
+import com.alibaba.compileflow.engine.definition.common.var.IVar;
+import com.alibaba.compileflow.engine.definition.common.var.impl.Var;
 import com.alibaba.compileflow.engine.process.preruntime.generator.code.CodeTargetSupport;
 import com.alibaba.compileflow.engine.runtime.impl.AbstractProcessRuntime;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author yusu
@@ -42,9 +52,9 @@ public class ExclusiveGatewayGenerator extends AbstractBpmnActionNodeGenerator<E
     @Override
     public void generateCode(CodeTargetSupport codeTargetSupport) {
         String methodName = generateExclusiveGatewayMethodName();
-        codeTargetSupport.addBodyLine(methodName + "();");
+        codeTargetSupport.addBodyLine(methodName + "(_pContext);");
 
-        generateMethodCode(codeTargetSupport, methodName, this::generateExclusiveGatewayMethodCode);
+        generateMethodCode(codeTargetSupport, methodName, generateDefaultParam(), this::generateExclusiveGatewayMethodCode);
         Map<String, List<TransitionNode>> followingGraph = runtime.getFollowingGraph();
         List<TransitionNode> followingNodes = followingGraph.get(flowNode.getId());
         executeNodes(followingNodes, codeTargetSupport);
@@ -72,7 +82,7 @@ public class ExclusiveGatewayGenerator extends AbstractBpmnActionNodeGenerator<E
             Map<String, List<TransitionNode>> branchGraph = runtime.getBranchGraph();
             List<TransitionNode> branchNodes = branchGraph.get(transition.getTargetRef());
             if (transition.equals(transitions.get(0))) {
-                String ifCondition = "if (" + condition + ") {";
+                String ifCondition = "if (" + translateVariable(condition) + ") {";
                 codeTargetSupport.addBodyLine(ifCondition);
                 generateTransitionComment(codeTargetSupport, transition);
                 executeNodes(branchNodes, codeTargetSupport);
@@ -87,7 +97,7 @@ public class ExclusiveGatewayGenerator extends AbstractBpmnActionNodeGenerator<E
                 executeNodes(branchNodes, codeTargetSupport);
                 codeTargetSupport.addBodyLine("}");
             } else {
-                String elseIfCondition = " else if (" + condition + ") {";
+                String elseIfCondition = " else if (" + translateVariable(condition) + ") {";
                 codeTargetSupport.appendLine(elseIfCondition);
                 generateTransitionComment(codeTargetSupport, transition);
                 executeNodes(branchNodes, codeTargetSupport);
@@ -109,4 +119,15 @@ public class ExclusiveGatewayGenerator extends AbstractBpmnActionNodeGenerator<E
         }
     }
 
+    private List<IVar> generateDefaultParam() {
+        Var var = new Var();
+        var.setDataType(DataType.getClassName(Map.class));
+        var.setName("_pContext");
+
+        return Stream.of(var).collect(Collectors.toList());
+    }
+
+    private String translateVariable(String condition) {
+        return "ExpressionUtil.evalCondition(_pContext," + "\"" + condition + "\")";
+    }
 }

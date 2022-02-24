@@ -65,5 +65,4 @@ public class ExtensionAttribute {
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
-
 }

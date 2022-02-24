@@ -16,16 +16,19 @@
  */
 package com.alibaba.compileflow.engine.process.preruntime.converter.impl.parser.support.bpmn;
 
-import com.alibaba.compileflow.engine.definition.bpmn.BpmnModelConstants;
-import com.alibaba.compileflow.engine.definition.bpmn.ServiceTask;
+import com.alibaba.compileflow.engine.definition.bpmn.*;
 import com.alibaba.compileflow.engine.definition.common.Element;
 import com.alibaba.compileflow.engine.definition.common.action.impl.Action;
 import com.alibaba.compileflow.engine.definition.common.action.impl.JavaActionHandle;
 import com.alibaba.compileflow.engine.definition.common.action.impl.SpringBeanActionHandle;
-import com.alibaba.compileflow.engine.process.preruntime.converter.impl.parser.support.AbstractBpmnElementParser;
+import com.alibaba.compileflow.engine.definition.common.extension.ExtensionElement;
 import com.alibaba.compileflow.engine.process.preruntime.converter.impl.parser.constants.ActionType;
 import com.alibaba.compileflow.engine.process.preruntime.converter.impl.parser.model.ParseContext;
 import com.alibaba.compileflow.engine.process.preruntime.converter.impl.parser.model.XMLSource;
+import com.alibaba.compileflow.engine.process.preruntime.converter.impl.parser.support.AbstractBpmnElementParser;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author wuxiang
@@ -64,7 +67,14 @@ public class ServiceTaskParser extends AbstractBpmnElementParser<ServiceTask> {
 
     @Override
     protected void attachChildElement(Element childElement, ServiceTask element, ParseContext parseContext) {
-
+        if (element instanceof ServiceTask && childElement instanceof ExtensionElements) {
+            ((ExtensionElements) childElement).getExtensionElements().stream()
+                .filter(extensionElement -> "inputOutput".equals(extensionElement.getName()))
+                .map(this::buildExtensionParameter)
+                .forEach(parameters -> {
+                    ((ServiceTask) element).setParameters(parameters);
+                });
+        }
     }
 
     @Override
@@ -72,4 +82,32 @@ public class ServiceTaskParser extends AbstractBpmnElementParser<ServiceTask> {
         return BpmnModelConstants.BPMN_ELEMENT_SERVICE_TASK;
     }
 
+    /**
+     * 构建输入输出参数
+     *
+     * @param extensionElement
+     * @return
+     */
+    private List<BaseParameter> buildExtensionParameter(ExtensionElement extensionElement) {
+        List<BaseParameter> result = new ArrayList<>();
+        extensionElement.getChildElements().forEach((key, element) -> {
+            if (key.equals("inputParameter")) {
+                for (ExtensionElement item : element) {
+                    InputParameter inputParameter = new InputParameter();
+                    inputParameter.setName(item.getAttributeValue("name"));
+                    inputParameter.setValue(item.getAttributeValue("value"));
+                    result.add(inputParameter);
+                }
+            } else if (key.equals("outputParameter")) {
+                for (ExtensionElement item : element) {
+                    OutputParameter outputParameter = new OutputParameter();
+                    outputParameter.setName(item.getAttributeValue("name"));
+                    outputParameter.setValue(item.getAttributeValue("value"));
+                    result.add(outputParameter);
+                }
+            }
+        });
+
+        return result;
+    }
 }

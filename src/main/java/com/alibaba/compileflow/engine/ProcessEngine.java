@@ -45,11 +45,15 @@ public interface ProcessEngine<T extends FlowModel> {
 
     void preCompile(String... codes);
 
+    void preCompileXml(String code, String xml);
+
     void preCompile(ClassLoader classLoader, String... codes);
 
     void reload(String code);
 
     T load(String code);
+
+    T loadXml(String xml);
 
     String getJavaCode(String code);
 

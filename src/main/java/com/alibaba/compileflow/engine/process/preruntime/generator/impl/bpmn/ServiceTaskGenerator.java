@@ -16,9 +16,15 @@
  */
 package com.alibaba.compileflow.engine.process.preruntime.generator.impl.bpmn;
 
+import com.alibaba.compileflow.engine.common.util.ExpressionUtil;
+import com.alibaba.compileflow.engine.definition.bpmn.BaseParameter;
+import com.alibaba.compileflow.engine.definition.bpmn.InputParameter;
 import com.alibaba.compileflow.engine.definition.bpmn.ServiceTask;
 import com.alibaba.compileflow.engine.process.preruntime.generator.code.CodeTargetSupport;
 import com.alibaba.compileflow.engine.runtime.impl.AbstractProcessRuntime;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author yusu
@@ -32,7 +38,28 @@ public class ServiceTaskGenerator extends AbstractBpmnActionNodeGenerator<Servic
 
     @Override
     public void generateCode(CodeTargetSupport codeTargetSupport) {
+        List<String> outputs = new ArrayList<>();
+        // 按照bpmn2.0的输入 wangyijin
+        if (flowNode.getParameters() != null) {
+            for (BaseParameter parameter : flowNode.getParameters()) {
+                String value = parameter.getValue();
+                if (value != null && value.startsWith("$")) {
+                    value = "_pContext.get(\"" + ExpressionUtil.trimNameKey(value) + "\")";
+                } else {
+                    value = "\"" + value + "\"";
+                }
+                String line = "_pContext.put(\"" + parameter.getName() + "\"," + value + ");";
+                if (parameter instanceof InputParameter) {
+                    codeTargetSupport.addBodyLine(line);
+                } else {
+                    outputs.add(line);
+                }
+            }
+        }
         super.generateCode(codeTargetSupport);
+
+        // 按照bpmn2.0的输出 wangyijin
+        codeTargetSupport.addBodyLines(outputs);
     }
 
 }

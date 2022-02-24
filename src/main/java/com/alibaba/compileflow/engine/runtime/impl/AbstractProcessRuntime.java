@@ -22,10 +22,7 @@ import com.alibaba.compileflow.engine.common.ClassWrapper;
 import com.alibaba.compileflow.engine.common.CompileFlowException;
 import com.alibaba.compileflow.engine.common.Lifecycle;
 import com.alibaba.compileflow.engine.common.constant.FlowModelType;
-import com.alibaba.compileflow.engine.common.util.ClassUtils;
-import com.alibaba.compileflow.engine.common.util.DataType;
-import com.alibaba.compileflow.engine.common.util.ObjectFactory;
-import com.alibaba.compileflow.engine.common.util.VarUtils;
+import com.alibaba.compileflow.engine.common.util.*;
 import com.alibaba.compileflow.engine.definition.common.*;
 import com.alibaba.compileflow.engine.definition.common.var.IVar;
 import com.alibaba.compileflow.engine.definition.tbbpm.EventNode;
@@ -386,6 +383,9 @@ public abstract class AbstractProcessRuntime<T extends FlowModel> implements Pro
             for (IVar returnVar : returnVars) {
                 returnVarLines.add("_pResult.put(\"" + returnVar.getName() + "\", " + returnVar.getName() + ");");
             }
+        } else {
+            // wangyijin 无返回值，把上下文返回
+            returnVarLines.add("_pResult.putAll(_pContext);");
         }
         return returnVarLines;
     }
@@ -677,6 +677,7 @@ public abstract class AbstractProcessRuntime<T extends FlowModel> implements Pro
         addImportedType(Map.class);
         addImportedType(HashMap.class);
         addImportedType(ObjectFactory.class);
+        addImportedType(ExpressionUtil.class);
         addImportedType(ProcessEngineFactory.class);
         addImportedType(DataType.class);
         addImportedType(BeanProvider.class);

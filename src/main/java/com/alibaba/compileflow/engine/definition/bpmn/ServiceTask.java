@@ -17,8 +17,11 @@
 package com.alibaba.compileflow.engine.definition.bpmn;
 
 import com.alibaba.compileflow.engine.definition.common.Stateless;
+import com.alibaba.compileflow.engine.definition.common.VarSupport;
 import com.alibaba.compileflow.engine.definition.common.action.HasAction;
 import com.alibaba.compileflow.engine.definition.common.action.IAction;
+
+import java.util.List;
 
 public class ServiceTask extends Task implements HasAction, Stateless {
 
@@ -31,6 +34,8 @@ public class ServiceTask extends Task implements HasAction, Stateless {
     private String type;
 
     private IAction action;
+
+    private List<BaseParameter> parameters;
 
     public String getImplementation() {
         return implementation;
@@ -74,4 +79,11 @@ public class ServiceTask extends Task implements HasAction, Stateless {
         this.action = action;
     }
 
+    public List<BaseParameter> getParameters() {
+        return parameters;
+    }
+
+    public void setParameters(List<BaseParameter> parameters) {
+        this.parameters = parameters;
+    }
 }

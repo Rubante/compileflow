@@ -66,4 +66,7 @@ public class ExtensionElement extends AbstractExtensionElement {
         }
     }
 
+    public Map<String, List<ExtensionElement>> getChildElements() {
+        return childElements;
+    }
 }
